@@ -5,10 +5,10 @@ import time
 import numpy as np
 import datetime
 import math
-from sklearn.utils import shuffle
+import pandas as pd
 
 tf.flags.DEFINE_integer('embedding_size', 100, 'Dimensionality of product embedding')
-tf.flags.DEFINE_integer('batch_size', 500, 'Batch size')
+tf.flags.DEFINE_integer('batch_size', 5000, 'Batch size')
 tf.flags.DEFINE_integer('num_epochs', 400, 'Number of training epochs')
 tf.flags.DEFINE_integer('hidden_size', 200, 'Number of hidden units')
 tf.flags.DEFINE_boolean('allow_soft_placement', True, 'Allow device soft device placement')
@@ -34,7 +34,10 @@ data_size = data.shape[0]
 product_num = len(product_l)
 
 epoch_steps = data_size / FLAGS.batch_size
-product_l = product_l.tolist()
+# turn to pandas dataframe
+product_l = pd.DataFrame(product_l)
+product_l.columns = ['Producto_ID']
+product_l['index1'] = product_l.index
 
 with tf.Graph().as_default():
     session_conf = tf.ConfigProto(allow_soft_placement=FLAGS.allow_soft_placement)
@@ -43,7 +46,7 @@ with tf.Graph().as_default():
     with sess.as_default():
         global_step = tf.Variable(0, name="global_step", trainable=False)
         timestamp = str(int(time.time()))
-        decay_lr = tf.train.exponential_decay(0.01, global_step, 10000, 0.96, staircase=True)
+        decay_lr = tf.train.exponential_decay(0.3, global_step, 3000, 0.96, staircase=True)
         optimizer = tf.train.AdamOptimizer(decay_lr)
         # gradient pipeline
         grads_and_vars = optimizer.compute_gradients(rnn.loss)
@@ -60,30 +63,33 @@ with tf.Graph().as_default():
             total_loss = 0
             # shuffle data
             # data = shuffle(data)
-            data.iloc[np.random.permutation(len(data))]
+            data = data.iloc[np.random.permutation(len(data))]
             for i in range(epoch_steps):
 
                 data_batch = data.iloc[i*FLAGS.batch_size:(i+1)*FLAGS.batch_size]
                 demand_nums = data_batch[['3','4','5','6','7','8','9']].as_matrix()
                 product_ids = []
-                products = data_batch['Producto_ID'].as_matrix()
-
-                for p in products:
-                    if p in product_l:
-                        product_ids.append(product_l.index(p))
-                    else:
-                        product_ids.append(product_num)
+                products = data_batch['Producto_ID']
+                products_index = pd.merge(data_batch, product_l, how='left')
+                products_index.fillna(product_num, inplace=True)
+                product_ids = products_index['index1'].as_matrix()
+                # for p in products:
+                #    if p in product_l:
+                #        product_ids.append(product_l.index(p))
+                #    else:
+                #        product_ids.append(product_num)
 
                 ones = np.ones([FLAGS.batch_size, 1])
 
                 tweak_nums = np.concatenate((ones, demand_nums[:,:-1]), axis=1)
 
                 feed_dict = {rnn.demand_nums: demand_nums, rnn.product_ids: product_ids, rnn.tweak_nums: tweak_nums}
-                _, step, loss = sess.run([train_op, global_step, rnn.loss], feed_dict)
+                _, step, loss, pred = sess.run([train_op, global_step, rnn.loss, rnn.pred], feed_dict)
                 total_loss += loss**2
                 time_str = datetime.datetime.now().isoformat()
                 if i % 200 == 0:
                     print '{} -- Epoch {}, Step {}, loss: {}'.format(time_str, j, i,loss)
+                    print pred
             total_loss = math.sqrt(total_loss/epoch_steps)
             print 'Epoch {} overall loss: {}'.format(j, total_loss)
             with open('result_log', 'a') as f:
