@@ -7,12 +7,12 @@ import datetime
 import math
 import pandas as pd
 
-tf.flags.DEFINE_integer('embedding_size', 100, 'Dimensionality of product embedding')
+tf.flags.DEFINE_integer('embedding_size', 200, 'Dimensionality of product embedding')
 tf.flags.DEFINE_integer('batch_size', 5000, 'Batch size')
 tf.flags.DEFINE_integer('num_epochs', 400, 'Number of training epochs')
-tf.flags.DEFINE_integer('hidden_size', 200, 'Number of hidden units')
+tf.flags.DEFINE_integer('hidden_size', 400, 'Number of hidden units')
 tf.flags.DEFINE_boolean('allow_soft_placement', True, 'Allow device soft device placement')
-tf.flags.DEFINE_integer("max_grad_norm", 40.0, "Maximum gradient norm. 40.0")
+tf.flags.DEFINE_integer("max_grad_norm", 5.0, "Maximum gradient norm. 40.0")
 
 FLAGS = tf.flags.FLAGS
 FLAGS._parse_flags()
@@ -46,13 +46,13 @@ with tf.Graph().as_default():
     with sess.as_default():
         global_step = tf.Variable(0, name="global_step", trainable=False)
         timestamp = str(int(time.time()))
-        decay_lr = tf.train.exponential_decay(0.3, global_step, 3000, 0.96, staircase=True)
+        decay_lr = tf.train.exponential_decay(0.001, global_step, 3000, 0.96, staircase=True)
         optimizer = tf.train.AdamOptimizer(decay_lr)
         # gradient pipeline
-        grads_and_vars = optimizer.compute_gradients(rnn.loss)
+        grads_and_vars = optimizer.compute_gradients(rnn.rmse)
 
         grads_and_vars = [(tf.clip_by_norm(g, FLAGS.max_grad_norm), v)
-                          for g, v in grads_and_vars if g is not None]
+                          for g, v in grads_and_vars]
         train_op = optimizer.apply_gradients(grads_and_vars,
                                              name="train_op",
                                              global_step=global_step)
@@ -79,12 +79,13 @@ with tf.Graph().as_default():
                 #    else:
                 #        product_ids.append(product_num)
 
-                ones = np.ones([FLAGS.batch_size, 1])
+                ones = np.zeros([FLAGS.batch_size, 1])
 
                 tweak_nums = np.concatenate((ones, demand_nums[:,:-1]), axis=1)
 
                 feed_dict = {rnn.demand_nums: demand_nums, rnn.product_ids: product_ids, rnn.tweak_nums: tweak_nums}
-                _, step, loss, pred = sess.run([train_op, global_step, rnn.loss, rnn.pred], feed_dict)
+
+                _, step, loss, pred, o_w = sess.run([train_op, global_step, rnn.loss, rnn.pred, rnn.o_w], feed_dict)
                 total_loss += loss**2
                 time_str = datetime.datetime.now().isoformat()
                 if i % 200 == 0:

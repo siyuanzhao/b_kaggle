@@ -6,6 +6,6 @@ def read_data(path):
     data = pd.read_csv(path)
 
     # load product list
-    product_l = pd.read_pickle('product_list')
+    product_l = pd.read_pickle('u_p_l')
 
     return product_l, data
