@@ -79,7 +79,7 @@ with tf.Graph().as_default():
                 #    else:
                 #        product_ids.append(product_num)
 
-                ones = np.zeros([FLAGS.batch_size, 1])
+                ones = np.ones([FLAGS.batch_size, 1])
 
                 tweak_nums = np.concatenate((ones, demand_nums[:,:-1]), axis=1)
 
