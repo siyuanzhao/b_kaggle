@@ -69,6 +69,8 @@ with tf.Graph().as_default():
 
                 data_batch = data.iloc[i*FLAGS.batch_size:(i+1)*FLAGS.batch_size]
                 demand_nums = data_batch[['3','4','5','6','7','8','9']].as_matrix()
+                tweak_nums = demand_nums[:, 0:-1]
+                print tweak_nums
                 demand_nums[:,1] = demand_nums[:,0] + demand_nums[:,1]
                 demand_nums[:,2] = demand_nums[:,1] + demand_nums[:,2]
                 demand_nums[:,3] = demand_nums[:,2] + demand_nums[:,3]
@@ -76,13 +78,15 @@ with tf.Graph().as_default():
                 demand_nums[:,5] = demand_nums[:,4] + demand_nums[:,5]
                 demand_nums[:,6] = demand_nums[:,5] + demand_nums[:,6]
                 product_ids = []
+                print demand_nums
+                exit(0)
                 products = data_batch['Producto_ID']
                 products_index = pd.merge(data_batch, product_l, how='left')
                 products_index.fillna(product_num, inplace=True)
                 product_ids = products_index['index1'].as_matrix()
 
                 #tweak_nums = np.concatenate((demand_nums[:,0:1], demand_nums[:,1:-1]), axis=1)
-                tweak_nums = demand_nums[:, 0:-1]
+
                 feed_dict = {rnn.demand_nums: demand_nums[:, 1:], rnn.product_ids: product_ids, rnn.tweak_nums: tweak_nums}
 
                 _, step, loss, pred, o_w = sess.run([train_op, global_step, rnn.loss, rnn.pred, rnn.o_w], feed_dict)
