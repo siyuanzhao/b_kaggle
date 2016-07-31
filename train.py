@@ -58,6 +58,7 @@ with tf.Graph().as_default():
                                              global_step=global_step)
         # Initialize all variables
         sess.run(tf.initialize_all_variables())
+        saver = tf.train.Saver(tf.all_variables())
 
         for j in range(FLAGS.num_epochs):
             total_loss = 0
@@ -79,13 +80,6 @@ with tf.Graph().as_default():
                 products_index = pd.merge(data_batch, product_l, how='left')
                 products_index.fillna(product_num, inplace=True)
                 product_ids = products_index['index1'].as_matrix()
-                # for p in products:
-                #    if p in product_l:
-                #        product_ids.append(product_l.index(p))
-                #    else:
-                #        product_ids.append(product_num)
-
-                #ones = data_batch[['6']].as_matrix()
 
                 #tweak_nums = np.concatenate((demand_nums[:,0:1], demand_nums[:,1:-1]), axis=1)
                 tweak_nums = demand_nums[:, 0:-1]
@@ -96,9 +90,17 @@ with tf.Graph().as_default():
                 time_str = datetime.datetime.now().isoformat()
                 if i % 200 == 0:
                     print '{} -- Epoch {}, Step {}, loss: {}'.format(time_str, j, i,loss)
-                    print pred
+                    with open('pred_log', 'a') as f:
+                        f.write(pred)
+                        f.write('\n')
             total_loss = math.sqrt(total_loss/epoch_steps)
             print 'Epoch {} overall loss: {}'.format(j, total_loss)
-            with open('result_log', 'a') as f:
-                f.write('Epoch {} overall loss: {}'.format(j, total_loss))
-                f.write('\n')
+            try:
+                with open('result_log', 'a') as f:
+                    f.write('Epoch {} overall loss: {}'.format(j, total_loss))
+                    f.write('\n')
+                if j>0 and j%50 == 0:
+                    print 'saving model...'
+                    saver.save(sess, 'checkpoint_epoch_{}'.format(j))
+            except:
+                print 'Unpected error.'
