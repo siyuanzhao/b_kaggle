@@ -70,7 +70,7 @@ with tf.Graph().as_default():
                 data_batch = data.iloc[i*FLAGS.batch_size:(i+1)*FLAGS.batch_size]
                 demand_nums = data_batch[['3','4','5','6','7','8','9']].as_matrix()
                 tweak_nums = demand_nums[:, 0:-1]
-                print tweak_nums
+
                 demand_nums[:,1] = demand_nums[:,0] + demand_nums[:,1]
                 demand_nums[:,2] = demand_nums[:,1] + demand_nums[:,2]
                 demand_nums[:,3] = demand_nums[:,2] + demand_nums[:,3]
@@ -78,8 +78,7 @@ with tf.Graph().as_default():
                 demand_nums[:,5] = demand_nums[:,4] + demand_nums[:,5]
                 demand_nums[:,6] = demand_nums[:,5] + demand_nums[:,6]
                 product_ids = []
-                print demand_nums
-                exit(0)
+
                 products = data_batch['Producto_ID']
                 products_index = pd.merge(data_batch, product_l, how='left')
                 products_index.fillna(product_num, inplace=True)
@@ -94,10 +93,10 @@ with tf.Graph().as_default():
                 time_str = datetime.datetime.now().isoformat()
                 if i % 200 == 0:
                     print '{} -- Epoch {}, Step {}, loss: {}'.format(time_str, j, i,loss)
-                    with open('pred_log', 'a') as f:
-                        for ite in pred:
-                            f.write(ite)
-                            f.write('\n')
+                    for ite in pred:
+                        print ite
+                        break
+                        
             total_loss = math.sqrt(total_loss/epoch_steps)
             print 'Epoch {} overall loss: {}'.format(j, total_loss)
             try:
