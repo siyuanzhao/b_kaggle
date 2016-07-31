@@ -10,7 +10,7 @@ class BimboRNN(object):
         self._embedding_dim = embedding_dim
         self._product_num = product_num
         self._hidden_size = hidden_size
-        self._output_size = 200
+        self._output_size = 20
         self._num_weeks = num_weeks
         self.build_input()
         # build the model

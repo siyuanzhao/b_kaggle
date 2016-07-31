@@ -7,12 +7,12 @@ import datetime
 import math
 import pandas as pd
 
-tf.flags.DEFINE_integer('embedding_size', 200, 'Dimensionality of product embedding')
+tf.flags.DEFINE_integer('embedding_size', 20, 'Dimensionality of product embedding')
 tf.flags.DEFINE_integer('batch_size', 5000, 'Batch size')
 tf.flags.DEFINE_integer('num_epochs', 400, 'Number of training epochs')
-tf.flags.DEFINE_integer('hidden_size', 400, 'Number of hidden units')
+tf.flags.DEFINE_integer('hidden_size', 50, 'Number of hidden units')
 tf.flags.DEFINE_boolean('allow_soft_placement', True, 'Allow device soft device placement')
-tf.flags.DEFINE_integer("max_grad_norm", 5.0, "Maximum gradient norm. 40.0")
+tf.flags.DEFINE_integer("max_grad_norm", 1.0, "Maximum gradient norm. 40.0")
 
 FLAGS = tf.flags.FLAGS
 FLAGS._parse_flags()
@@ -42,7 +42,7 @@ product_l['index1'] = product_l.index
 with tf.Graph().as_default():
     session_conf = tf.ConfigProto(allow_soft_placement=FLAGS.allow_soft_placement)
     sess = tf.Session(config=session_conf)
-    rnn = BimboRNN(FLAGS.batch_size, FLAGS.embedding_size, product_num, FLAGS.hidden_size, 7)
+    rnn = BimboRNN(FLAGS.batch_size, FLAGS.embedding_size, product_num, FLAGS.hidden_size, 6)
     with sess.as_default():
         global_step = tf.Variable(0, name="global_step", trainable=False)
         timestamp = str(int(time.time()))
@@ -68,6 +68,12 @@ with tf.Graph().as_default():
 
                 data_batch = data.iloc[i*FLAGS.batch_size:(i+1)*FLAGS.batch_size]
                 demand_nums = data_batch[['3','4','5','6','7','8','9']].as_matrix()
+                demand_nums[:,1] = demand_nums[:,0] + demand_nums[:,1]
+                demand_nums[:,2] = demand_nums[:,1] + demand_nums[:,2]
+                demand_nums[:,3] = demand_nums[:,2] + demand_nums[:,3]
+                demand_nums[:,4] = demand_nums[:,3] + demand_nums[:,4]
+                demand_nums[:,5] = demand_nums[:,4] + demand_nums[:,5]
+                demand_nums[:,6] = demand_nums[:,5] + demand_nums[:,6]
                 product_ids = []
                 products = data_batch['Producto_ID']
                 products_index = pd.merge(data_batch, product_l, how='left')
@@ -79,11 +85,11 @@ with tf.Graph().as_default():
                 #    else:
                 #        product_ids.append(product_num)
 
-                ones = np.ones([FLAGS.batch_size, 1])
+                #ones = data_batch[['6']].as_matrix()
 
-                tweak_nums = np.concatenate((ones, demand_nums[:,:-1]), axis=1)
-
-                feed_dict = {rnn.demand_nums: demand_nums, rnn.product_ids: product_ids, rnn.tweak_nums: tweak_nums}
+                #tweak_nums = np.concatenate((demand_nums[:,0:1], demand_nums[:,1:-1]), axis=1)
+                tweak_nums = demand_nums[:, 0:-1]
+                feed_dict = {rnn.demand_nums: demand_nums[:, 1:], rnn.product_ids: product_ids, rnn.tweak_nums: tweak_nums}
 
                 _, step, loss, pred, o_w = sess.run([train_op, global_step, rnn.loss, rnn.pred, rnn.o_w], feed_dict)
                 total_loss += loss**2
