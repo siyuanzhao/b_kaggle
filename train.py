@@ -7,12 +7,12 @@ import datetime
 import math
 import pandas as pd
 
-tf.flags.DEFINE_integer('embedding_size', 20, 'Dimensionality of product embedding')
-tf.flags.DEFINE_integer('batch_size', 5000, 'Batch size')
+tf.flags.DEFINE_integer('embedding_size', 50, 'Dimensionality of product embedding')
+tf.flags.DEFINE_integer('batch_size', 500, 'Batch size')
 tf.flags.DEFINE_integer('num_epochs', 400, 'Number of training epochs')
-tf.flags.DEFINE_integer('hidden_size', 50, 'Number of hidden units')
+tf.flags.DEFINE_integer('hidden_size', 100, 'Number of hidden units')
 tf.flags.DEFINE_boolean('allow_soft_placement', True, 'Allow device soft device placement')
-tf.flags.DEFINE_integer("max_grad_norm", 1.0, "Maximum gradient norm. 40.0")
+tf.flags.DEFINE_integer("max_grad_norm", 40.0, "Maximum gradient norm. 40.0")
 
 FLAGS = tf.flags.FLAGS
 FLAGS._parse_flags()
@@ -46,7 +46,7 @@ with tf.Graph().as_default():
     with sess.as_default():
         global_step = tf.Variable(0, name="global_step", trainable=False)
         timestamp = str(int(time.time()))
-        decay_lr = tf.train.exponential_decay(0.001, global_step, 3000, 0.96, staircase=True)
+        decay_lr = tf.train.exponential_decay(0.1, global_step, 3000, 0.96, staircase=True)
         optimizer = tf.train.AdamOptimizer(decay_lr)
         # gradient pipeline
         grads_and_vars = optimizer.compute_gradients(rnn.rmse)
@@ -91,8 +91,9 @@ with tf.Graph().as_default():
                 if i % 200 == 0:
                     print '{} -- Epoch {}, Step {}, loss: {}'.format(time_str, j, i,loss)
                     with open('pred_log', 'a') as f:
-                        f.write(pred)
-                        f.write('\n')
+                        for ite in pred:
+                            f.write(ite)
+                            f.write('\n')
             total_loss = math.sqrt(total_loss/epoch_steps)
             print 'Epoch {} overall loss: {}'.format(j, total_loss)
             try:
