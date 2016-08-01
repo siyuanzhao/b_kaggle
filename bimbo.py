@@ -10,7 +10,7 @@ class BimboRNN(object):
         self._embedding_dim = embedding_dim
         self._product_num = product_num
         self._hidden_size = hidden_size
-        self._output_size = 20
+        self._output_size = 15
         self._num_weeks = num_weeks
         self.build_input()
         # build the model
@@ -29,9 +29,11 @@ class BimboRNN(object):
         ones = tf.ones([self._num_weeks, self._embedding_dim])
         pro_embeddings_expanded = pro_embeddings_expanded * ones
         tweak_nums_expanded = tf.expand_dims(self.tweak_nums, [-1])
-        inputs = pro_embeddings_expanded * tweak_nums_expanded
-        #inputs = tf.concat(2, [pro_embeddings_expanded, tweak_nums_expanded])
-        reshaped_inputs = tf.reshape(inputs, [-1, self._embedding_dim])
+        #inputs = pro_embeddings_expanded * tweak_nums_expanded
+        inputs = tf.concat(2, [pro_embeddings_expanded, tweak_nums_expanded])
+        self.inputs = inputs
+        #reshaped_inputs = tf.reshape(inputs, [-1, self._embedding_dim])
+        reshaped_inputs = tf.reshape(inputs, [-1, self._embedding_dim+1])
         split_inputs = tf.split(0, self._num_weeks, reshaped_inputs)
         
         outputs, states = tf.nn.rnn(gru_cell, split_inputs, dtype=tf.float32)
@@ -46,12 +48,13 @@ class BimboRNN(object):
         o_b = tf.get_variable('o_b', [1], initializer=tf.truncated_normal_initializer(mean=10))
         #o = tf.nn.relu(tf.matmul(output, sigmoid_w) + sigmoid_b)
 
-        pred = tf.maximum(tf.matmul(output, o_w) + o_b, 0)
+        pred = tf.sigmoid(tf.matmul(output, o_w) + o_b)
         #pred = output
         pred = tf.reshape(pred, [-1, self._num_weeks])
         # loss function
         #rmse = tf.sqrt(tf.reduce_sum(tf.square(pred-self.demand_nums)))
-        loss = tf.sqrt(tf.reduce_mean(tf.square(tf.log(pred+1)-tf.log(self.demand_nums+1))))
+        loss = tf.sqrt(tf.reduce_sum(tf.square(pred-tf.log(self.demand_nums+1))))
+        pred = tf.exp(pred)
         rmse = loss
         self.loss = loss
         self.pred = pred

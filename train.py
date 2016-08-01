@@ -10,7 +10,7 @@ import pandas as pd
 tf.flags.DEFINE_integer('embedding_size', 50, 'Dimensionality of product embedding')
 tf.flags.DEFINE_integer('batch_size', 500, 'Batch size')
 tf.flags.DEFINE_integer('num_epochs', 400, 'Number of training epochs')
-tf.flags.DEFINE_integer('hidden_size', 100, 'Number of hidden units')
+tf.flags.DEFINE_integer('hidden_size', 50, 'Number of hidden units')
 tf.flags.DEFINE_boolean('allow_soft_placement', True, 'Allow device soft device placement')
 tf.flags.DEFINE_integer("max_grad_norm", 40.0, "Maximum gradient norm. 40.0")
 
@@ -88,11 +88,12 @@ with tf.Graph().as_default():
 
                 feed_dict = {rnn.demand_nums: demand_nums[:, 1:], rnn.product_ids: product_ids, rnn.tweak_nums: tweak_nums}
 
-                _, step, loss, pred, o_w = sess.run([train_op, global_step, rnn.loss, rnn.pred, rnn.o_w], feed_dict)
+                _, step, loss, pred, inputs = sess.run([train_op, global_step, rnn.loss, rnn.pred, rnn.inputs], feed_dict)
                 total_loss += loss**2
                 time_str = datetime.datetime.now().isoformat()
                 if i % 200 == 0:
                     print '{} -- Epoch {}, Step {}, loss: {}'.format(time_str, j, i,loss)
+                    print inputs[0]
                     for ite in pred:
                         print ite
                         break
