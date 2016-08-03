@@ -53,7 +53,7 @@ class BimboRNN(object):
         pred = tf.reshape(pred, [-1, self._num_weeks])
         # loss function
         #rmse = tf.sqrt(tf.reduce_sum(tf.square(pred-self.demand_nums)))
-        loss = tf.sqrt(tf.reduce_sum(tf.square(pred-tf.log(self.demand_nums+1))))
+        loss = tf.sqrt(tf.reduce_mean(tf.square(pred-tf.log(self.demand_nums+1)), 0))
         pred = tf.exp(pred)
         rmse = loss
         self.loss = loss

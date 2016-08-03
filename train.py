@@ -93,7 +93,7 @@ with tf.Graph().as_default():
                 time_str = datetime.datetime.now().isoformat()
                 if i % 200 == 0:
                     print '{} -- Epoch {}, Step {}, loss: {}'.format(time_str, j, i,loss)
-                    print inputs[0]
+                    #print inputs[0]
                     for ite in pred:
                         print ite
                         break
